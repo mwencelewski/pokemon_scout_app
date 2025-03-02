@@ -11,3 +11,5 @@ wheels/
 .venv
 *.vscode/
 *.env
+request.ipynb
+*.DS_Store
