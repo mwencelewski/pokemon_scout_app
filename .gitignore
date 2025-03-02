@@ -9,3 +9,5 @@ wheels/
 *.db
 # Virtual environments
 .venv
+*.vscode/
+*.env
