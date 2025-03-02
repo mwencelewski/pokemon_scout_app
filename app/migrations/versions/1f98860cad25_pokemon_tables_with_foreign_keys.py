@@ -1,18 +1,18 @@
-"""Pokemon Tables
+"""Pokemon Tables with foreign keys
 
-Revision ID: b75df923ff37
+Revision ID: 1f98860cad25
 Revises: bb9b977774bf
-Create Date: 2025-03-02 08:47:53.659155
+Create Date: 2025-03-02 09:55:10.503518
 
 """
 from typing import Sequence, Union
-
+import sqlmodel
 from alembic import op
 import sqlalchemy as sa
-import sqlmodel 
+
 
 # revision identifiers, used by Alembic.
-revision: str = 'b75df923ff37'
+revision: str = '1f98860cad25'
 down_revision: Union[str, None] = 'bb9b977774bf'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
