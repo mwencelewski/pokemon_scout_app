@@ -3,6 +3,7 @@ from passlib.hash import pbkdf2_sha256
 from contextlib import contextmanager
 from commons import config
 from pydantic import root_validator
+import libs.models.pokemon
 
 
 class User(SQLModel, table=True):
