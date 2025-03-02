@@ -5,16 +5,6 @@ import pandas as pd
 class Pokemon(BaseDFBuilder):
     def build_df(
         self,
-        # species_id: int,
-        # cries_id: int,
-        # form_id: int,
-        # ability_id: int,
-        # game_index_id: int,
-        # item_name: str,
-        # move_id: int,
-        # stats_id: int,
-        # type_id: int,
-        # sprite_id: int,
     ):
         pokemon_df = pd.DataFrame([self.data])
         pokemon_df = pokemon_df.drop(
@@ -29,6 +19,8 @@ class Pokemon(BaseDFBuilder):
                 "sprites",
                 "stats",
                 "types",
+                "past_abilities",
+                "past_types",
             ]
         )
         # pokemon_df = pokemon_df.drop(columns=[
@@ -38,7 +30,6 @@ class Pokemon(BaseDFBuilder):
 
 class PokemonAbilities(BaseDFBuilder):
     def build_df(self) -> pd.DataFrame:  # type: ignore
-        keys = self.return_list_of_keys()
         ability_df = pd.DataFrame(self.data["abilities"])
         ability_df["ability_id"] = ability_df["ability"].apply(
             lambda x: BaseDFBuilder.extract_id(x["url"])
@@ -49,22 +40,14 @@ class PokemonAbilities(BaseDFBuilder):
 class Abilities(BaseDFBuilder):
     def build_df(self):
         abilities_df = pd.json_normalize(self.data["abilities"])
-        abilities_df["ability_id"] = abilities_df["ability.url"].apply(
+        abilities_df["id"] = abilities_df["ability.url"].apply(
             lambda x: BaseDFBuilder.extract_id(x)
         )
         abilities_df = abilities_df.drop(columns=["is_hidden", "slot"])
         abilities_df = abilities_df.rename(
-            columns={"ability.name": "ability_name", "ability.url": "ability_url"}
+            columns={"ability.name": "name", "ability.url": "url"}
         )
         return abilities_df
-
-
-class BaseExperience(BaseDFBuilder):
-    def build_df(self):
-        base_experience_df = pd.DataFrame(
-            [self.data["base_experience"]], columns=["base_experience"]
-        )
-        return base_experience_df
 
 
 class Cries(BaseDFBuilder):
@@ -151,27 +134,23 @@ class MovesVersionDetails(BaseDFBuilder):
 class Moves(BaseDFBuilder):
     def build_df(self):
         moves_df = pd.json_normalize(self.data["moves"])
-        moves_df["move_id"] = moves_df["move.url"].apply(
+        moves_df["id"] = moves_df["move.url"].apply(
             lambda x: BaseDFBuilder.extract_id(x)
         )
-        moves_df = moves_df.rename(
-            columns={"move.name": "move_name", "move.url": "move_url"}
-        )
+        moves_df = moves_df.rename(columns={"move.name": "name", "move.url": "url"})
         return moves_df
 
 
 class Stats(BaseDFBuilder):
     def build_df(self):
         stats_df = pd.json_normalize(self.data["stats"])
-        stats_df["stat_id"] = stats_df["stat.url"].apply(
+        stats_df["id"] = stats_df["stat.url"].apply(
             lambda x: BaseDFBuilder.extract_id(x)
         )
         stats_df = stats_df.rename(
             columns={
-                "base_stat": "base_stat",
-                "effort": "effort",
-                "stat.name": "stat_name",
-                "stat.url": "stat_url",
+                "stat.name": "name",
+                "stat.url": "url",
             }
         )
         return stats_df
@@ -180,10 +159,8 @@ class Stats(BaseDFBuilder):
 class Types(BaseDFBuilder):
     def build_df(self):
         types = pd.json_normalize(self.data["types"])
-        types["type_id"] = types["type.url"].apply(
-            lambda x: BaseDFBuilder.extract_id(x)
-        )
-        types = types.rename(columns={"type.name": "type_name", "type.url": "type_url"})
+        types["id"] = types["type.url"].apply(lambda x: BaseDFBuilder.extract_id(x))
+        types = types.rename(columns={"type.name": "name", "type.url": "url"})
         return types
 
 
@@ -199,11 +176,8 @@ class Species(BaseDFBuilder):
         species_df = pd.json_normalize(self.data["species"])
         if species_df.empty:
             return species_df
-        species_df["species_id"] = species_df["url"].apply(
+        species_df["id"] = species_df["url"].apply(
             lambda x: BaseDFBuilder.extract_id(x)
-        )
-        species_df = species_df.rename(
-            columns={"name": "species_name", "url": "species_url"}
         )
         return species_df
 
