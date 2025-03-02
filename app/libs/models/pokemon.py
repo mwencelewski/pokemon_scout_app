@@ -1,5 +1,6 @@
 from typing import Optional, List
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship, select
+from sqlalchemy import and_
 
 
 class Species(SQLModel, table=True):
@@ -8,6 +9,11 @@ class Species(SQLModel, table=True):
     url: Optional[str] = None
 
     pokemons: List["Pokemon"] = Relationship(back_populates="species")
+
+
+class PokemonForm(SQLModel, table=True):
+    pokemon_id: int = Field(foreign_key="pokemon.id", primary_key=True)
+    form_id: int = Field(foreign_key="form.id", primary_key=True)
 
 
 class Pokemon(SQLModel, table=True):
@@ -21,14 +27,24 @@ class Pokemon(SQLModel, table=True):
     location_area_encounters: Optional[str] = None
 
     species_id: Optional[int] = Field(default=None, foreign_key="species.id")
-    species: Optional[Species] = Relationship(back_populates="pokemons")
 
+    species: Optional[Species] = Relationship(back_populates="pokemons")
     abilities: List["PokemonAbility"] = Relationship(back_populates="pokemon")
+    cries: Optional["PokemonCry"] = Relationship(back_populates="pokemon")
     moves: List["PokemonMove"] = Relationship(back_populates="pokemon")
     stats: List["PokemonStat"] = Relationship(back_populates="pokemon")
+    forms: List["Form"] = Relationship(
+        back_populates="pokemons", link_model=PokemonForm
+    )
     types: List["PokemonType"] = Relationship(back_populates="pokemon")
-    sprite: Optional["Sprite"] = Relationship(
-        back_populates="pokemon", sa_relationship_kwargs={"uselist": False}
+
+
+class Form(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    url: Optional[str] = None
+    pokemons: List[Pokemon] = Relationship(
+        back_populates="forms", link_model=PokemonForm
     )
 
 
@@ -52,60 +68,35 @@ class PokemonAbility(SQLModel, table=True):
     ability: Optional[Ability] = Relationship(back_populates="pokemon_associations")
 
 
-class Move(SQLModel, table=True):
+class Cries(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-    url: Optional[str] = None
-
-    pokemon_associations: List["PokemonMove"] = Relationship(back_populates="move")
-
-
-class MoveLearnMethod(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-    url: Optional[str] = None
-
-    move_details: List["PokemonMoveDetail"] = Relationship(
-        back_populates="move_learn_method"
-    )
+    latest: Optional[str] = Field(default=None)
+    legacy: Optional[str] = Field(default=None)
+    pokemon_cries: List["PokemonCry"] = Relationship(back_populates="cry")
 
 
-class VersionGroup(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-    url: Optional[str] = None
-
-    move_details: List["PokemonMoveDetail"] = Relationship(
-        back_populates="version_group"
-    )
-
-
-class PokemonMove(SQLModel, table=True):
-    __tablename__ = "pokemon_move"
+class PokemonCry(SQLModel, table=True):
     pokemon_id: int = Field(foreign_key="pokemon.id", primary_key=True)
-    move_id: int = Field(foreign_key="move.id", primary_key=True)
-
-    pokemon: Optional[Pokemon] = Relationship(back_populates="moves")
-    move: Optional[Move] = Relationship(back_populates="pokemon_associations")
-    details: List["PokemonMoveDetail"] = Relationship(
-        back_populates="pokemon_move", sa_relationship_kwargs={"cascade": "all, delete"}
-    )
+    cry_id: int = Field(foreign_key="cries.id", primary_key=True)
+    pokemon: Optional[Pokemon] = Relationship(back_populates="cries")
+    cry: Optional[Cries] = Relationship(back_populates="pokemon_cries")
 
 
-class PokemonMoveDetail(SQLModel, table=True):
-    pokemon_id: int = Field(foreign_key="pokemon_move.pokemon_id", primary_key=True)
-    move_id: int = Field(foreign_key="pokemon_move.move_id", primary_key=True)
-    move_learn_method_id: int = Field(
-        foreign_key="movelearnmethod.id", primary_key=True
-    )
-    version_group_id: int = Field(foreign_key="versiongroup.id", primary_key=True)
-    level_learned_at: Optional[int] = None
+class Type(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    url: Optional[str] = None
 
-    pokemon_move: Optional[PokemonMove] = Relationship(back_populates="details")
-    move_learn_method: Optional[MoveLearnMethod] = Relationship(
-        back_populates="move_details"
-    )
-    version_group: Optional[VersionGroup] = Relationship(back_populates="move_details")
+    pokemon_types: List["PokemonType"] = Relationship(back_populates="type")
+
+
+class PokemonType(SQLModel, table=True):
+    pokemon_id: int = Field(foreign_key="pokemon.id", primary_key=True)
+    type_id: int = Field(foreign_key="type.id", primary_key=True)
+    slot: Optional[int] = None
+
+    pokemon: Optional[Pokemon] = Relationship(back_populates="types")
+    type: Optional[Type] = Relationship(back_populates="pokemon_types")
 
 
 class Stat(SQLModel, table=True):
@@ -126,28 +117,18 @@ class PokemonStat(SQLModel, table=True):
     stat: Optional[Stat] = Relationship(back_populates="pokemon_stats")
 
 
-class Type(SQLModel, table=True):
+class Move(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     url: Optional[str] = None
 
-    pokemon_types: List["PokemonType"] = Relationship(back_populates="type")
+    pokemon_associations: List["PokemonMove"] = Relationship(back_populates="move")
 
 
-class PokemonType(SQLModel, table=True):
+class PokemonMove(SQLModel, table=True):
+    __tablename__ = "pokemon_move"
     pokemon_id: int = Field(foreign_key="pokemon.id", primary_key=True)
-    type_id: int = Field(foreign_key="type.id", primary_key=True)
-    slot: Optional[int] = None
+    move_id: int = Field(foreign_key="move.id", primary_key=True)
 
-    pokemon: Optional[Pokemon] = Relationship(back_populates="types")
-    type: Optional[Type] = Relationship(back_populates="pokemon_types")
-
-
-class Sprite(SQLModel, table=True):
-    pokemon_id: int = Field(foreign_key="pokemon.id", primary_key=True)
-    front_default: Optional[str] = None
-    back_default: Optional[str] = None
-    front_shiny: Optional[str] = None
-    back_shiny: Optional[str] = None
-
-    pokemon: Optional[Pokemon] = Relationship(back_populates="sprite")
+    pokemon: Optional[Pokemon] = Relationship(back_populates="moves")
+    move: Optional[Move] = Relationship(back_populates="pokemon_associations")
