@@ -18,6 +18,8 @@ The idea of this project is to run a Flask Application the will integrate with t
 - Stats
 - Moves
 
+Youtube Video: https://youtu.be/viWl4BMbQ8Q
+
 ## Database Model
 
 ```mermaid
